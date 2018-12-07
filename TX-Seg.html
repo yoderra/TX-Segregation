@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+	<title>Texas Segregation</title>
+	<!-- Much love to Arif for all his help -->
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+	<link rel="shortcut icon" type="image/x-icon" href="docs/images/favicon.ico" />
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+	<!-- <link rel="stylesheet" href="https://unpkg.com/leaflet@1.3.4/dist/leaflet.css" integrity="sha512-puBpdR0798OZvTTbP4A8Ix/l+A4dHDD0DGqYW6RQ+9jxkRFclaxxQb/SJAWZfWAkuyeQUytO7+7N4QKrDh+drA=="
+	 crossorigin="" /> -->
+
+	<link rel="stylesheet" href="leaflet.css" />
+	<script src="https://unpkg.com/leaflet@1.3.4/dist/leaflet.js" integrity="sha512-nMMmRyTVoLYqjP9hrbed9S+FzjZHW5gY1TWCHA5ckwXZBadntCNs8kEqAWdrb9O7rxbCaA4lKTIWjDXZxflOcA=="
+	 crossorigin=""></script>
+
+	<link rel="icon" type="image/png" href="txfavicon.png"/>
+
+	<style>
+		html,
+		body {
+			height: 100%;
+			margin: 0;
+		}
+
+		#map {
+			width: 600px;
+			height: 400px;
+		}
+	
+	</style>
+
+	<style>
+		#map {
+			width: 800px;
+			height: 500px;
+		}
+
+		.info {
+			padding: 6px 8px;
+			font: 14px/16px Arial, Helvetica, sans-serif;
+			background: white;
+			background: rgba(255, 255, 255, 0.8);
+			box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+			border-radius: 5px;
+		}
+
+		.info h4 {
+			margin: 0 0 5px;
+			color: #777;
+		}
+
+		.legend {
+			text-align: left;
+			line-height: 18px;
+			color: #555;
+		}
+
+		.legend i {
+			width: 18px;
+			height: 18px;
+			float: left;
+			margin-right: 8px;
+			opacity: 0.7;
+		}
+	</style>
+
+	<style>
+		svg {
+  			font: 10px sans-serif;
+		}
+
+		.background path {
+  			fill: none;
+  			stroke: #ddd;
+  			shape-rendering: crispEdges;
+		}
+
+		.foreground path {
+  			fill: none;
+ 			stroke: steelblue;
+		}
+
+		.brush .extent {
+  			fill-opacity: .3;
+  			stroke: #fff;
+ 			 shape-rendering: crispEdges;
+		}
+
+		.axis line,
+		.axis path {
+  			fill: none;
+  			stroke: #000;
+  			shape-rendering: crispEdges;
+		}
+
+		.axis text {
+  			text-shadow: 0 1px 0 #fff, 1px 0 0 #fff, 0 -1px 0 #fff, -1px 0 0 #fff;
+  			cursor: move;
+		}
+	</style>
+</head>
+
+<body>
+
+		<center>
+
+
+				<h1> Visualizing Segregation in Texas School Districts </h1>
+				<p1>Using Dissimilarity Index created by Drs. Massey and Denton of the University of Chicago</p1>
+				
+				<div class="panel-group">
+				  <div class="panel panel-default">
+					<div class="panel-heading">
+					  <h4 class="panel-title">
+						<a data-toggle="collapse" href="#collapse1"> <b>What is Dissimilarity Index?</b></a>
+					  
+					</div>
+				
+				  <div class="panel-body">
+
+						<p>	The <b>Dissimilarity Index</b> measures whether one particular group is distributed across census tracts in the metropolitan area in the same way as another group. 
+							A high value indicates that the two groups tend to live in different tracts. D ranges from 0 to 100. A value of 60 (or above) is considered very high. 
+							It means that 60% (or more) of the members of one group would need to move to a different tract in order for the two groups to be equally distributed. 
+							Values of 40 or 50 are usually considered a moderate level of segregation, and values of 30 or below are considered to be fairly low.
+					</p>
+					</div>
+				
+				  </div>
+				</div>
+
+				<div id='map'></div>
+
+				<!-- <script type="text/javascript" src="us-states.js"></script> -->
+				<script type="text/javascript" src="Dist_w_Segregation.js"></script>
+
+				<script type="text/javascript">
+
+					var map = L.map('map').setView([31.368457, -96.648509], 7);
+
+					L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token=pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw', {
+						maxZoom: 18,
+						attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, ' +
+							'<a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, ' +
+							'Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',
+						id: 'mapbox.light'
+					}).addTo(map);
+
+
+					// control that shows state info on hover
+					var info = L.control();
+
+					info.onAdd = function (map) {
+						this._div = L.DomUtil.create('div', 'info');
+						this.update();
+						return this._div;
+					};
+
+					info.update = function (props) {
+						this._div.innerHTML = '<h4>Racial Dissimilarity Index</h4>' + (props ?
+							'<b>' + props.NAME_1 + '</b><br />' + "Black: " + props.Seg_Black + '</b><br />' + "Hispanic: " + props.Seg_Hisp + '</b><br />' + "Asian: " + props.Seg_Asian
+							: 'Hover over a district');
+					};
+
+					info.addTo(map);
+
+
+					// get color depending on population density value
+					function getColor(d) {
+						return d > 1 ? '#990000' :
+							d > 0.5? '#d7301f' :
+								d > 0.05 ? '#ef6548' :
+								d > 0.01 ? '#fc8d59' :
+									d >  0.009 ? '#fdbb84' :
+										d > 0.005 ? '#fdd49e' :
+											d > 0.001 ? '#fee8c8' :
+											'#fff7ec';
+
+					}
+
+					function style(feature) {
+						return {
+							weight: 1.5,
+							opacity: 1,
+							color: 'white',
+							dashArray: '0',
+							fillOpacity: 0.85,
+							fillColor: getColor(feature.properties.Seg_Black)
+						};
+					}
+
+					function highlightFeature(e) {
+						var layer = e.target;
+
+						layer.setStyle({
+							weight: 3,
+							color: '#666',
+							dashArray: '',
+							fillOpacity: 0.7
+						});
+
+						if (!L.Browser.ie && !L.Browser.opera && !L.Browser.edge) {
+							layer.bringToFront();
+						}
+
+						info.update(layer.feature.properties);
+					}
+
+					var geojson;
+
+					function resetHighlight(e) {
+						geojson.resetStyle(e.target);
+						info.update();
+					}
+
+					function zoomToFeature(e) {
+						map.fitBounds(e.target.getBounds());
+					}
+
+					function onEachFeature(feature, layer) {
+						layer.on({
+							mouseover: highlightFeature,
+							mouseout: resetHighlight,
+							click: zoomToFeature
+						});
+					}
+
+					geojson = L.geoJson(statesData, {
+						style: style,
+						onEachFeature: onEachFeature
+					}).addTo(map);
+
+					map.attributionControl.addAttribution('Population data &copy; <a href="http://census.gov/">US Census Bureau</a>');
+
+
+					var legend = L.control({ position: 'bottomright' });
+
+					legend.onAdd = function (map) {
+
+						var div = L.DomUtil.create('div', 'info legend'),
+							//grades = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8],
+							grades = [0, 0.001, 0.005, 0.009, 0.01, 0.05, 0.5, 1],
+							labels = [],
+							from, to;
+
+						for (var i = 0; i < grades.length; i++) {
+							from = grades[i];
+							to = grades[i + 1];
+
+							labels.push(
+								'<i style="background:' + getColor(from + 0.0005) + '"></i> ' +
+								from + (to ? '&ndash;' + to : '+'));
+						}
+
+						div.innerHTML = labels.join('<br>');
+						return div;
+					};
+
+					legend.addTo(map);
+
+				</script>
+
+<div class="panel-body">
+
+						<p>		
+							 
+								 
+
+								 
+					</p>
+					</div>
+				
+				  </div>
+
+				<script src="https://d3js.org/d3.v3.min.js"></script>
+				<script>
+
+					var margin = {top: 30, right: 10, bottom: 10, left: 10},
+    					width = 1300 - margin.left - margin.right,
+    					height = 400 - margin.top - margin.bottom;
+
+					var x = d3.scale.ordinal().rangePoints([0, width], 1),
+					    y = {},
+					    dragging = {};
+
+					var line = d3.svg.line(),
+   						axis = d3.svg.axis().orient("left"),
+   						background,
+					    foreground;
+
+					var svg = d3.select("body").append("svg")
+					    .attr("width", width + margin.left + margin.right)
+				    .attr("height", height + margin.top + margin.bottom)
+ 					    .append("g")
+				    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+					d3.csv("RaceDissim.csv", function(error, race) {
+
+  // Extract the list of dimensions and create a scale for each.
+  x.domain(dimensions = d3.keys(race[0]).filter(function(d) {
+    return d != "name" && (y[d] = d3.scale.linear()
+        .domain(d3.extent(race, function(p) { return +p[d]; }))
+        .range([height, 0]));
+  }));
+
+  // Add grey background lines for context.
+  background = svg.append("g")
+      .attr("class", "background")
+    .selectAll("path")
+      .data(race)
+    .enter().append("path")
+      .attr("d", path);
+
+  // Add blue foreground lines for focus.
+  foreground = svg.append("g")
+      .attr("class", "foreground")
+    .selectAll("path")
+      .data(race)
+    .enter().append("path")
+      .attr("d", path);
+
+  // Add a group element for each dimension.
+  var g = svg.selectAll(".dimension")
+      .data(dimensions)
+    .enter().append("g")
+      .attr("class", "dimension")
+      .attr("transform", function(d) { return "translate(" + x(d) + ")"; })
+      .call(d3.behavior.drag()
+        .origin(function(d) { return {x: x(d)}; })
+        .on("dragstart", function(d) {
+          dragging[d] = x(d);
+          background.attr("visibility", "hidden");
+        })
+        .on("drag", function(d) {
+          dragging[d] = Math.min(width, Math.max(0, d3.event.x));
+          foreground.attr("d", path);
+          dimensions.sort(function(a, b) { return position(a) - position(b); });
+          x.domain(dimensions);
+          g.attr("transform", function(d) { return "translate(" + position(d) + ")"; })
+        })
+        .on("dragend", function(d) {
+          delete dragging[d];
+          transition(d3.select(this)).attr("transform", "translate(" + x(d) + ")");
+          transition(foreground).attr("d", path);
+          background
+              .attr("d", path)
+            .transition()
+              .delay(500)
+              .duration(0)
+              .attr("visibility", null);
+        }));
+
+  // Add an axis and title.
+  g.append("g")
+      .attr("class", "axis")
+      .each(function(d) { d3.select(this).call(axis.scale(y[d])); })
+    .append("text")
+      .style("text-anchor", "middle")
+      .attr("y", -9)
+      .text(function(d) { return d; });
+
+  // Add and store a brush for each axis.
+  g.append("g")
+      .attr("class", "brush")
+      .each(function(d) {
+        d3.select(this).call(y[d].brush = d3.svg.brush().y(y[d]).on("brushstart", brushstart).on("brush", brush));
+      })
+    .selectAll("rect")
+      .attr("x", -8)
+      .attr("width", 16);
+});
+
+function position(d) {
+  var v = dragging[d];
+  return v == null ? x(d) : v;
+}
+
+function transition(g) {
+  return g.transition().duration(500);
+}
+
+// Returns the path for a given data point.
+function path(d) {
+  return line(dimensions.map(function(p) { return [position(p), y[p](d[p])]; }));
+}
+
+function brushstart() {
+  d3.event.sourceEvent.stopPropagation();
+}
+
+// Handles a brush event, toggling the display of foreground lines.
+function brush() {
+  var actives = dimensions.filter(function(p) { return !y[p].brush.empty(); }),
+      extents = actives.map(function(p) { return y[p].brush.extent(); });
+  foreground.style("display", function(d) {
+    return actives.every(function(p, i) {
+      return extents[i][0] <= d[p] && d[p] <= extents[i][1];
+    }) ? null : "none";
+  });
+}
+
+</script>
+
+
+
+	
+
+</body>
+</centre>
+
+</html>
