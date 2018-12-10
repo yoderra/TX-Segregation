@@ -102,6 +102,9 @@
   			cursor: move;
 		}
 	</style>
+	<style>
+	#popup{display:none; background:#efefef; border:1px solid black; width:50%; height:200px;}
+	</style>
 </head>
 
 <body>
@@ -128,6 +131,19 @@
 							Values closer to 0.30 are usually considered a moderate level of segregation, and values of 0.30 or below are considered to be fairly low. The parallel coordinate plot below can be used to compare trends in the racial dissimilarity index across race.
 					  </p>
 					</div>
+						
+					<button onclick="document.getElementById('popup') .style.display='block'">About this application</button>
+					<div id="popup">
+					
+					TX-Seg: A tool for visualizing racial dissimilarity in Texas school districts.
+					Visualize racial dissimilarity values for each school district by hovering over a district on the map. The default view is black-white racial dissimilarity.
+					This application was made as part of a final project for the Fall 2018 class Geography 461W "Dynamic Cartographic Representation" at Penn State, lead by Dr. Alan M. MacEachren (maceachren@psu.edu) and teaching assistant Arif Masrur (axm733@psu.edu).
+					Data for this aplication includes Census Bureau data from the 2010 Census and TIGER shapefiles, both retrived from <a href="https://www.nhgis.org/">nhgis.org</a>.
+					This application was developed by Andrew Patterson (aop5187@psu.edu), William "Reed" Repasky (wrr5069@psu.edu), and Andrew Yoder (auy121@psu.edu).
+
+					<button onclick="document.getElementById('popup') .style.display='none'">Hide About</button>
+					</div>	
+						
 				
 				  </div>
 				</div>
@@ -143,9 +159,7 @@
 
 					L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token=pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB6B5aw', {
 						maxZoom: 18,
-						attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, ' +
-							'<a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, ' +
-							'Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',
+						attribution: 'Basemap: <a href="https://www.mapbox.com/">Mapbox</a>',
 						id: 'mapbox.light'
 					}).addTo(map);
 
@@ -233,8 +247,7 @@
 						onEachFeature: onEachFeature
 					}).addTo(map);
 
-					map.attributionControl.addAttribution('Population data &copy; <a href="http://census.gov/">US Census Bureau</a>');
-
+					map.attributionControl.addAttribution('Census data <a href="http://census.gov/">US Census Bureau</a>');
 
 					var legend = L.control({ position: 'bottomright' });
 
